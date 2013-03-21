@@ -1,0 +1,51 @@
+require 'rubygems'
+require 'mongo'
+
+include Mongo
+
+class EventpopularityController < ApplicationController
+
+  $MONGO_CLIENT = MongoClient.new
+  $DB = $MONGO_CLIENT.db("wpf")
+  $EVENTS_COLLECTION = $DB.collection("events")
+  $BOOKS_COLLECTION = $DB.collection("books")
+
+  $FEED_HEADER = "<?xml version=\"1.0\" encoding=\"utf-8\"?>
+<feed xmlns=\"http://www.w3.org/2005/Atom\">
+   <id>tag:legacyapi.sportingbet.com;eventPopularity</id>
+   <title>SportingBet Event Popularity Hierarchy</title>
+   <subtitle>page 1 of 1</subtitle>
+   <updated>2013-03-18T09:03:13.000Z</updated>"
+  $FEED_FOOTER = "</feed>"
+  def index
+    #start = Time.now
+    eventsHash = {}
+    $EVENTS_COLLECTION.find({"eventPopularity"=>{"$size"=> {"$gt"=>0}}},{:limit => 100}).collect do | e |
+      eventsHash[e["id"].to_s] = e
+    end
+
+    processedEvents = ""
+    processedEventIds = []
+
+    $BOOKS_COLLECTION.find({"eventId"=> {"$in" => eventsHash.keys}},:fields => ["startDatetime", "isForInRunning", "isForStreaming", "eventId", "sportId"]).each do | b |
+      relatedEvent = eventsHash[b["eventId"]]
+      next if processedEventIds.include?(b["eventId"])
+      #add book data
+      relatedEvent.merge!({"startDatetime" => b["startDatetime"]})
+      relatedEvent.merge!({"isForInRunning" => b["isForInRunning"]})
+      relatedEvent.merge!({"isForStreaming" => b["isForStreaming"]})
+      relatedEvent.merge!({"sportId" => b["sportId"]})
+      processedEventIds << b["eventId"]
+      processedEvents << render_atom_event(relatedEvent)
+      #processedEvents << relatedEvent.to_json
+    end
+
+    render :xml => "#{$FEED_HEADER}#{processedEvents}#{$FEED_FOOTER}"
+    
+  end
+
+  def render_atom_event(event)
+    "<entry><id>tag:legacyapi.sportingbet.com;eventPopularity:/event/#{event["id"]}</id><title>#{event["name"]}</title><updated>#{event["lastModified"]}</updated><category>event</category><link rel=\"sports\" type=\"application/atom+xml\" href=\"http://legacyapi.sportingbet.com/oddsfeed/eventPopularity/eventClasses/#{event["eventClassIds"][0]}\" /><content type=\"application/atom+xml\"><isInRunningDelay>XX</isInRunningDelay><globalDelay>XX</globalDelay><baseSportId>event/#{event["sportId"]}</baseSportId><eventDateTime>#{event["startDatetime"]}</eventDateTime><forInRunning>#{event["isForInRunning"]}</forInRunning><forStreaming>#{event["isForStreaming"]}</forStreaming><isVisible>true</isVisible><totalBooks>2</totalBooks></content></entry>"
+  end
+
+end
