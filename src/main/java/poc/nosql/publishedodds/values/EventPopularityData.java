@@ -1,7 +1,13 @@
 package poc.nosql.publishedodds.values;
 
+import org.springframework.data.neo4j.annotation.GraphId;
+import org.springframework.data.neo4j.annotation.NodeEntity;
+
+@NodeEntity
 public class EventPopularityData {
 
+    @GraphId
+    private Long graphId;
     private String partnerId;
     private Integer betCount;
 
@@ -13,9 +19,13 @@ public class EventPopularityData {
         this.betCount = betCount;
     }
 
-//    public Long getNodeId() {
-//        return nodeId;
-//    }
+    public Long getGraphId() {
+        return graphId;
+    }
+
+    public void setGraphId(Long graphId) {
+        this.graphId = graphId;
+    }
 
     public String getPartnerId() {
         return partnerId;

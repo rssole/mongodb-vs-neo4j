@@ -13,7 +13,6 @@ import org.testng.Assert;
 import org.testng.annotations.Test;
 import poc.nosql.publishedodds.entities.Event;
 import poc.nosql.publishedodds.entities.Repository;
-import poc.nosql.publishedodds.relationships.EventToEventPopularityRelationship;
 import poc.nosql.publishedodds.relationships.RepositoryToEventRelationship;
 import poc.nosql.publishedodds.repositories.BooksRepository;
 import poc.nosql.publishedodds.repositories.EventPopularityRepository;
@@ -75,26 +74,28 @@ public class MongoDataImportPlayground extends AbstractTestNGSpringContextTests 
         Repository r = new Repository("WPF");
 
         Transaction transaction = databaseService.beginTx();
-
         try {
             neoTemplate.save(r);
             List<Event> eventsList = new ArrayList<Event>();
             while (iterator.hasNext()) {
                 DBObject eventDbObject = iterator.next();
                 Event e = fromDBObject(eventDbObject);
-                eventsList.add(e);
-                eventsRepository.save(e);
-
-                neoTemplate.createRelationshipBetween(r, e, RepositoryToEventRelationship.class, RepositoryToEventRelationship.REPOSITORY_CONTAINS_EVENT, false);
 
                 List<EventPopularityData> eventPopularityList = getEventPopularity(eventDbObject);
-                for (EventPopularityData popularityData : eventPopularityList) {
-                    popularityRepository.save(popularityData);
-                    neoTemplate.createRelationshipBetween(e, popularityData,
-                            EventToEventPopularityRelationship.class,
-                            EventToEventPopularityRelationship.HAS_POPULARITY_DATA,
-                            true);
+                if (eventPopularityList.size() > 0) {
+                    List<String> partnerIds = new ArrayList<String>();
+                    List<Integer> betCounts = new ArrayList<Integer>();
+                    for (EventPopularityData epd : eventPopularityList) {
+                        partnerIds.add(epd.getPartnerId());
+                        betCounts.add(epd.getBetCount());
+                    }
+                    e.setPartnerIds(partnerIds);
+                    e.setBetCounts(betCounts);
                 }
+                eventsList.add(e);
+
+                eventsRepository.save(e);
+                neoTemplate.createRelationshipBetween(r, e, RepositoryToEventRelationship.class, RepositoryToEventRelationship.REPOSITORY_CONTAINS_EVENT, false);
             }
 
             Assert.assertEquals(eventsList.size(), 1252, "Number of events must match number of documents in mongodb");
@@ -105,6 +106,7 @@ public class MongoDataImportPlayground extends AbstractTestNGSpringContextTests 
     }
 
     private static List<EventPopularityData> getEventPopularity(DBObject mongoDbObject) {
+        @SuppressWarnings("unchecked")
         List<DBObject> eventPopularities = (List<DBObject>) mongoDbObject.get("eventPopularity");
         List<EventPopularityData> eventPopularityDataList = new ArrayList<EventPopularityData>();
 
@@ -123,6 +125,8 @@ public class MongoDataImportPlayground extends AbstractTestNGSpringContextTests 
         Integer displayOrder = Integer.parseInt((String) mongoDbObject.get("displayOrder"));
         Date lastModified = (Date) mongoDbObject.get("lastModified");
         String absolutePath = (String) mongoDbObject.get("absoluteFilePath");
+
+        @SuppressWarnings("unchecked")
         List<String> eventClassIds = (List<String>) mongoDbObject.get("eventClassIds");
 
         Event e = new Event(id, name);

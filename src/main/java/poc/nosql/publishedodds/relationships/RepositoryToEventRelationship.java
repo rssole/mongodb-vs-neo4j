@@ -24,8 +24,7 @@ public class RepositoryToEventRelationship {
     public RepositoryToEventRelationship() {
     }
 
-    public RepositoryToEventRelationship(Long graphId, Repository repo, Event event) {
-        this.graphId = graphId;
+    public RepositoryToEventRelationship(Repository repo, Event event) {
         this.repository = repo;
         this.event = event;
     }

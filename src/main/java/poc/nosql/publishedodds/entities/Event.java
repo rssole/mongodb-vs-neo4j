@@ -3,11 +3,9 @@ package poc.nosql.publishedodds.entities;
 import org.springframework.data.neo4j.annotation.GraphId;
 import org.springframework.data.neo4j.annotation.Indexed;
 import org.springframework.data.neo4j.annotation.NodeEntity;
-import poc.nosql.publishedodds.values.EventPopularityData;
 
 import java.util.Date;
 import java.util.List;
-import java.util.Set;
 
 @NodeEntity
 public class Event {
@@ -25,7 +23,12 @@ public class Event {
     private Date lastModified;
     private String absolutePath;
     private List<String> eventClassIds;
-    private Set<EventPopularityData> eventPopularity;
+
+    @Indexed
+    private List<String> partnerIds;
+
+    @Indexed
+    private List<Integer> betCounts;
 
     public Event() {
     }
@@ -91,11 +94,19 @@ public class Event {
         this.eventClassIds = eventClassIds;
     }
 
-    public Set<EventPopularityData> getEventPopularity() {
-        return eventPopularity;
+    public List<String> getPartnerIds() {
+        return partnerIds;
     }
 
-    public void setEventPopularity(Set<EventPopularityData> eventPopularity) {
-        this.eventPopularity = eventPopularity;
+    public void setPartnerIds(List<String> partnerIds) {
+        this.partnerIds = partnerIds;
+    }
+
+    public List<Integer> getBetCounts() {
+        return betCounts;
+    }
+
+    public void setBetCounts(List<Integer> betCounts) {
+        this.betCounts = betCounts;
     }
 }
