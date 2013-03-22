@@ -4,6 +4,7 @@ import org.springframework.data.neo4j.annotation.GraphId;
 import org.springframework.data.neo4j.annotation.Indexed;
 import org.springframework.data.neo4j.annotation.NodeEntity;
 
+import javax.xml.bind.annotation.XmlTransient;
 import java.util.Date;
 import java.util.List;
 
@@ -12,7 +13,7 @@ public class Event {
 
     @GraphId
 //    long nodeId;
-    Long nodeId; // neo4j spring data support require this not to be of primitive but reference type
+            Long nodeId; // neo4j spring data support require this not to be of primitive but reference type
 
     @Indexed(unique = true)
     private String id;
@@ -22,6 +23,7 @@ public class Event {
     private Integer displayOrder;
     private Date lastModified;
     private String absolutePath;
+
     private List<String> eventClassIds;
 
     @Indexed
