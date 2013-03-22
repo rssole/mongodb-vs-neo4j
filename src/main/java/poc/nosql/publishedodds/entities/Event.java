@@ -1,19 +1,20 @@
 package poc.nosql.publishedodds.entities;
 
-import org.springframework.data.neo4j.annotation.GraphId;
-import org.springframework.data.neo4j.annotation.Indexed;
-import org.springframework.data.neo4j.annotation.NodeEntity;
+import org.springframework.data.neo4j.annotation.*;
+import poc.nosql.publishedodds.relationships.EventToBookRelationship;
+import poc.nosql.publishedodds.values.EventPopularityData;
 
-import javax.xml.bind.annotation.XmlTransient;
+import javax.xml.bind.annotation.XmlElement;
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 
 @NodeEntity
-public class Event {
+public class Event implements Comparable<Event> {
 
     @GraphId
 //    long nodeId;
-            Long nodeId; // neo4j spring data support require this not to be of primitive but reference type
+    Long nodeId; // neo4j spring data support require this not to be of primitive but reference type
 
     @Indexed(unique = true)
     private String id;
@@ -26,11 +27,13 @@ public class Event {
 
     private List<String> eventClassIds;
 
-    @Indexed
-    private List<String> partnerIds;
+//    @Fetch
+//    @RelatedTo(type = EventToEventPopularityRelationship.HAS_POPULARITY_DATA)
+    private Set<EventPopularityData> eventPopularityDataSet;
 
-    @Indexed
-    private List<Integer> betCounts;
+    @Fetch
+    @RelatedTo(type = EventToBookRelationship.HAS_BOOK)
+    private Set<Book> books;
 
     public Event() {
     }
@@ -96,19 +99,36 @@ public class Event {
         this.eventClassIds = eventClassIds;
     }
 
-    public List<String> getPartnerIds() {
-        return partnerIds;
+    public Set<EventPopularityData> getEventPopularityDataSet() {
+        return eventPopularityDataSet;
     }
 
-    public void setPartnerIds(List<String> partnerIds) {
-        this.partnerIds = partnerIds;
+    public void setEventPopularityDataSet(Set<EventPopularityData> eventPopularityDataSet) {
+        this.eventPopularityDataSet = eventPopularityDataSet;
     }
 
-    public List<Integer> getBetCounts() {
-        return betCounts;
+    @XmlElement(name = "book")
+    public Set<Book> getBooks() {
+        return books;
     }
 
-    public void setBetCounts(List<Integer> betCounts) {
-        this.betCounts = betCounts;
+    public void setBooks(Set<Book> books) {
+        this.books = books;
+    }
+
+    public int compareTo(Event o) {
+        if (o == null) {
+            return 1;
+        }
+
+        if (getId() == null && o.getId() != null) {
+            return -1;
+        }
+
+        if (getId() != null && o.getId() == null) {
+            return 1;
+        }
+
+        return getId().compareTo(o.getId());
     }
 }

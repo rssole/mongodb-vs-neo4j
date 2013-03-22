@@ -16,6 +16,8 @@
                 <property name="classesToBeBound">
                     <list>
                         <value>poc.nosql.publishedodds.entities.Event</value>
+                        <value>poc.nosql.publishedodds.entities.Book</value>
+                        <value>poc.nosql.publishedodds.values.EventPopularityData</value>
                         <value>poc.nosql.publishedodds.values.EventsList</value>
                     </list>
                 </property>

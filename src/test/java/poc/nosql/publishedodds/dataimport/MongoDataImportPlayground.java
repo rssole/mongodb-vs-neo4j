@@ -11,8 +11,11 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.testng.AbstractTestNGSpringContextTests;
 import org.testng.Assert;
 import org.testng.annotations.Test;
+import poc.nosql.publishedodds.entities.Book;
 import poc.nosql.publishedodds.entities.Event;
 import poc.nosql.publishedodds.entities.Repository;
+import poc.nosql.publishedodds.relationships.EventToBookRelationship;
+import poc.nosql.publishedodds.relationships.EventToEventPopularityRelationship;
 import poc.nosql.publishedodds.relationships.RepositoryToEventRelationship;
 import poc.nosql.publishedodds.repositories.BooksRepository;
 import poc.nosql.publishedodds.repositories.EventPopularityRepository;
@@ -20,14 +23,15 @@ import poc.nosql.publishedodds.repositories.EventsRepository;
 import poc.nosql.publishedodds.values.EventPopularityData;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.List;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.*;
 
 
 @ContextConfiguration("classpath:appcontext.xml")
 public class MongoDataImportPlayground extends AbstractTestNGSpringContextTests {
+
+    private final SimpleDateFormat sdf = new SimpleDateFormat ("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
 
     @Autowired
     MongoClient mongoClient;
@@ -66,9 +70,11 @@ public class MongoDataImportPlayground extends AbstractTestNGSpringContextTests 
 
 
     @Test
-    public void shouldImportMongoData() throws IOException {
+    public void shouldImportMongoData() throws IOException, ParseException {
         Assert.assertNotNull(databaseService);
         DBCursor eventsCursor = mongoClient.getDB("podds").getCollection("events").find();
+        DBCursor booksCursor = mongoClient.getDB("podds").getCollection("books").find();
+
         Iterator<DBObject> iterator = eventsCursor.iterator();
 
         Repository r = new Repository("WPF");
@@ -81,21 +87,26 @@ public class MongoDataImportPlayground extends AbstractTestNGSpringContextTests 
                 DBObject eventDbObject = iterator.next();
                 Event e = fromDBObject(eventDbObject);
 
+                eventsRepository.save(e);
+                eventsList.add(e);
+                neoTemplate.createRelationshipBetween(r, e, RepositoryToEventRelationship.class, RepositoryToEventRelationship.REPOSITORY_CONTAINS_EVENT, false);
+
                 List<EventPopularityData> eventPopularityList = getEventPopularity(eventDbObject);
                 if (eventPopularityList.size() > 0) {
-                    List<String> partnerIds = new ArrayList<String>();
-                    List<Integer> betCounts = new ArrayList<Integer>();
                     for (EventPopularityData epd : eventPopularityList) {
-                        partnerIds.add(epd.getPartnerId());
-                        betCounts.add(epd.getBetCount());
+                        popularityRepository.save(epd);
+                        neoTemplate.createRelationshipBetween(e, epd,
+                                EventToEventPopularityRelationship.class, EventToEventPopularityRelationship.HAS_POPULARITY_DATA, true);
                     }
-                    e.setPartnerIds(partnerIds);
-                    e.setBetCounts(betCounts);
                 }
-                eventsList.add(e);
+            }
 
-                eventsRepository.save(e);
-                neoTemplate.createRelationshipBetween(r, e, RepositoryToEventRelationship.class, RepositoryToEventRelationship.REPOSITORY_CONTAINS_EVENT, false);
+            iterator = booksCursor.iterator();
+            while (iterator.hasNext()) {
+                DBObject bookDBObject = iterator.next();
+                Book aBook = createBookFromDBObject(bookDBObject);
+                booksRepository.save(aBook);
+                addEventToBookRelationship(aBook, eventsList);
             }
 
             Assert.assertEquals(eventsList.size(), 1252, "Number of events must match number of documents in mongodb");
@@ -103,6 +114,40 @@ public class MongoDataImportPlayground extends AbstractTestNGSpringContextTests 
         } finally {
             transaction.finish();
         }
+
+        transaction = databaseService.beginTx();
+    }
+
+    private void addEventToBookRelationship(Book aBook, List<Event> eventsList) {
+        Collections.sort(eventsList);
+        int index = Collections.binarySearch(eventsList, new Event(aBook.getEventid(), ""));
+
+        Event event = eventsList.get(index);
+        neoTemplate.createRelationshipBetween(event, aBook, EventToBookRelationship.class, EventToBookRelationship.HAS_BOOK, false);
+    }
+
+    private Book createBookFromDBObject(DBObject bookDBObject) throws ParseException {
+        String sportId = (String) bookDBObject.get("sportId");
+        String eventId = (String) bookDBObject.get("eventId");
+        Boolean isForInRunning = Boolean.parseBoolean((String) bookDBObject.get("isForInRunning"));
+        Boolean isForStreaming = Boolean.parseBoolean((String) bookDBObject.get("isForStreaming"));
+        Date startDateTime =  sdf.parse((String) bookDBObject.get("startDatetime"));
+        Boolean isVisible = Boolean.parseBoolean((String) bookDBObject.get("isVisible"));
+
+        Object inRunningDelay = bookDBObject.get("inRunningDelay");
+        Integer inRunningDelayNumber = null;
+        if (inRunningDelay != null && !"".equals(inRunningDelay)) {
+            inRunningDelayNumber = Integer.parseInt((String) inRunningDelay);
+        }
+
+        Book b = new Book(sportId, eventId);
+        b.setForInRunning(isForInRunning);
+        b.setForStreaming(isForStreaming);
+        b.setStartDateTime(startDateTime);
+        b.setVisible(isVisible);
+        b.setInRunningDelay(inRunningDelayNumber);
+
+        return b;
     }
 
     private static List<EventPopularityData> getEventPopularity(DBObject mongoDbObject) {

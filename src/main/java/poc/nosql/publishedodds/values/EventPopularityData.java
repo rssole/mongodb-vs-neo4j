@@ -3,11 +3,15 @@ package poc.nosql.publishedodds.values;
 import org.springframework.data.neo4j.annotation.GraphId;
 import org.springframework.data.neo4j.annotation.NodeEntity;
 
+import javax.xml.bind.annotation.XmlTransient;
+
 @NodeEntity
 public class EventPopularityData {
 
+    @XmlTransient
     @GraphId
     private Long graphId;
+
     private String partnerId;
     private Integer betCount;
 

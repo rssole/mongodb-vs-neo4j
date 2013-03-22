@@ -1,32 +1,42 @@
 package poc.nosql.publishedodds.entities;
 
+import org.springframework.data.neo4j.annotation.GraphId;
+import org.springframework.data.neo4j.annotation.Indexed;
 import org.springframework.data.neo4j.annotation.NodeEntity;
+
+import javax.xml.bind.annotation.XmlTransient;
+import java.util.Date;
 
 @NodeEntity
 public class Book {
-    private String documentType;
+
+    @GraphId
+    @XmlTransient
+    private Long graphId;
+
     private boolean isForInRunning;
     private boolean isForStreaming;
-    private String startDateTime;
+    private Date startDateTime;
     private boolean isVisible;
-    private int sportId;
-    private int eventId;
-    private int inRunningDelay;
+    private String sportId;
+    @Indexed
+    private String eventId;
+    private Integer inRunningDelay;
 
     public Book() {
     }
 
-    public Book(int sportId, int eventId) {
+    public Book(String sportId, String eventId) {
         this.sportId = sportId;
         this.eventId = eventId;
     }
 
-    public String getDocumentType() {
-        return documentType;
+    public Long getGraphId() {
+        return graphId;
     }
 
-    public void setDocumentType(String documentType) {
-        this.documentType = documentType;
+    public void setGraphId(Long graphId) {
+        this.graphId = graphId;
     }
 
     public boolean isForInRunning() {
@@ -45,11 +55,11 @@ public class Book {
         isForStreaming = forStreaming;
     }
 
-    public String getStartDateTime() {
+    public Date getStartDateTime() {
         return startDateTime;
     }
 
-    public void setStartDateTime(String startDateTime) {
+    public void setStartDateTime(Date startDateTime) {
         this.startDateTime = startDateTime;
     }
 
@@ -61,19 +71,19 @@ public class Book {
         isVisible = visible;
     }
 
-    public int getSportId() {
+    public String getSportId() {
         return sportId;
     }
 
-    public void setSportId(int sportId) {
+    public void setSportId(String sportId) {
         this.sportId = sportId;
     }
 
-    public int getEventid() {
+    public String getEventid() {
         return eventId;
     }
 
-    public void setEventid(int eventid) {
+    public void setEventid(String eventid) {
         this.eventId = eventid;
     }
 
@@ -81,7 +91,7 @@ public class Book {
         return inRunningDelay;
     }
 
-    public void setInRunningDelay(int inRunningDelay) {
+    public void setInRunningDelay(Integer inRunningDelay) {
         this.inRunningDelay = inRunningDelay;
     }
 }

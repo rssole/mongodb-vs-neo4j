@@ -7,8 +7,10 @@ import poc.nosql.publishedodds.entities.Event;
 import java.util.List;
 
 public interface EventsRepository extends GraphRepository<Event> {
-    @Query("START ev=node:Event(\"*:*\") " +
-            "WHERE has(ev.betCounts) AND ({0} IN ev.partnerIds) " +
-            "RETURN ev")
+    @Query(value = "START ev=node:Event(\"*:*\") " +
+            "MATCH ev-[r:HAS_POPULARITY_DATA]->evPop " +
+            "WHERE evPop.partnerId = {0} " +
+            "RETURN ev " +
+            "ORDER BY evPop.betCount DESC")
     public List<Event> findByPartnerId(String partnerId);
 }

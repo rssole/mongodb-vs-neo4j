@@ -7,11 +7,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.servlet.ModelAndView;
 import poc.nosql.publishedodds.entities.Event;
-import poc.nosql.publishedodds.helpers.EventPopularityComparator;
 import poc.nosql.publishedodds.repositories.EventsRepository;
 import poc.nosql.publishedodds.values.EventsList;
 
-import java.util.Collections;
 import java.util.List;
 
 @Controller
@@ -19,7 +17,9 @@ import java.util.List;
 public class EventsController {
 
     // IntelliJ does not recognize Neo4j spring data stuff
-    /** @noinspection SpringJavaAutowiringInspection*/
+    /**
+     * @noinspection SpringJavaAutowiringInspection
+     */
     @Autowired
     EventsRepository eventsRepository;
 
@@ -31,9 +31,7 @@ public class EventsController {
 
     @RequestMapping(value = "/{partnerId}", method = RequestMethod.GET)
     public ModelAndView fetchEventsForPartner(@PathVariable String partnerId) {
-
         List<Event> eventsByPartnerId = eventsRepository.findByPartnerId(partnerId);
-        Collections.sort(eventsByPartnerId, new EventPopularityComparator(partnerId));
 
         return new ModelAndView("xmlViewer", "events", new EventsList(eventsByPartnerId));
     }
