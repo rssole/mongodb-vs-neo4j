@@ -38,7 +38,7 @@ public class Neo4jDatabasePlayground {
         gds.shutdown();
     }
 
-    @Test
+    @Test(enabled = false)
     public void shouldPutDataToNeo() {
         Transaction tx = gds.beginTx();
         try {
@@ -62,7 +62,7 @@ public class Neo4jDatabasePlayground {
         }
     }
 
-    @Test
+    @Test(enabled = false)
     public void shouldRemoveDataFromNeo() {
 
         Node nodeTwo = null;
@@ -98,7 +98,7 @@ public class Neo4jDatabasePlayground {
         }
     }
 
-    @Test
+    @Test(enabled = false)
     public void shouldConnectNodeZeroToNodesOneAndTwo() {
 
 
